@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OS Hardening Interactive Quiz</title>
+<style>
+  :root{
+    --bg:#0f172a;        /* slate-900 */
+    --panel:#111827;     /* gray-900 */
+    --card:#1f2937;      /* gray-800 */
+    --accent:#22c55e;    /* green-500 */
+    --accent-2:#60a5fa;  /* blue-400 */
+    --text:#e5e7eb;      /* gray-200 */
+    --muted:#94a3b8;     /* slate-400 */
+    --danger:#ef4444;    /* red-500 */
+    --warn:#f59e0b;      /* amber-500 */
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+    background: linear-gradient(180deg, var(--bg), #0b1220 60%);
+    color: var(--text);
+  }
+  header{
+    padding: 24px 16px; text-align:center; position: sticky; top: 0; z-index: 10;
+    background: rgba(15,23,42,.8); backdrop-filter: blur(6px); border-bottom: 1px solid #1e293b;
+  }
+  h1{ margin:0 0 6px; font-size: clamp(22px, 3vw, 30px); letter-spacing: .3px; }
+  .sub{ color: var(--muted); font-size: 14px; }
+  .container{ max-width: 900px; margin: 20px auto; padding: 16px; }
+  .card{
+    background: linear-gradient(180deg, var(--card), #111827);
+    border: 1px solid #243244; border-radius: 16px; padding: 18px; margin: 12px 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  .q-head{ display:flex; gap:10px; align-items:flex-start; }
+  .q-index{
+    min-width:32px; height: 32px; border-radius: 999px; background: #0b1220;
+    border: 1px solid #2a3a52; display:flex; align-items:center; justify-content:center;
+    color: var(--accent-2); font-weight: 700; margin-top: 2px;
+  }
+  .q-text{ font-weight: 600; line-height:1.4; }
+  .options{ margin-top:10px; display:grid; gap:8px; }
+  .opt{
+    display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; cursor:pointer;
+    border:1px solid #29364a; background:#0b1220;
+    transition: transform .06s ease, border-color .2s ease;
+  }
+  .opt:hover{ transform: translateY(-1px); border-color: #334458; }
+  .opt input{ margin-top: 3px; }
+  .badge{ display:inline-flex; gap:6px; align-items:center; padding:4px 10px; border-radius:999px; font-size:12px; border:1px solid #334155; color: var(--muted); }
+  .explain{ margin-top:10px; font-size: 14px; color: var(--muted); display:none; }
+  .correct{ border-color: rgba(34,197,94,.7) !important; }
+  .incorrect{ border-color: rgba(239,68,68,.7) !important; }
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; margin: 20px 0; }
+  button{
+    border:1px solid #2a3a52; background:#0b1220; color: var(--text); padding:10px 14px; border-radius:12px; cursor:pointer;
+    font-weight:600;
+  }
+  button.primary{ background: linear-gradient(90deg, var(--accent), #10b981); border-color: #065f46; color:#032213; }
+  button.secondary{ border-color:#334155; }
+  button.link{ background:transparent; border-color: transparent; color: var(--accent-2); text-decoration: underline; }
+  .score{ font-weight:700; }
+  .pill{ padding:3px 8px; border-radius:999px; background:#0b1220; border:1px solid #243244; font-size: 12px; color:var(--muted); }
+  footer{ text-align:center; color: var(--muted); padding: 20px 0 40px; }
+  .hidden{ display:none; }
+  .tf{ font-size: 12px; margin-left: 6px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <header>
+    <h1>OS Hardening Interactive Quiz</h1>
+    <div class="sub">Multiple Choice & True/False • Immediate feedback • Based on your study sheet</div>
+  </header>
+
+  <div class="container">
+    <section class="card">
+      <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+        <div class="badge">Tip: Click <strong>Submit</strong> for instant grading. Use <strong>Retry</strong> to try again (questions shuffle).</div>
+        <div><span class="pill" id="progress">0 / 0 answered</span></div>
+      </div>
+    </section>
+
+    <div id="quiz"></div>
+
+    <section class="card controls">
+      <button class="primary" id="submitBtn">Submit</button>
+      <button class="secondary" id="retryBtn">Retry</button>
+      <button class="link" id="showAnswersBtn">Show correct answers</button>
+      <div class="score" id="score"></div>
+    </section>
+
+    <footer>Made for quick, focused practice: passwords → least privilege → services → baselines → patching.</footer>
+  </div>
+
+<script>
+const QUESTIONS = [
+  {
+    type: "mc",
+    text: "What is the primary goal of operating system hardening?",
+    options: [
+      "To improve user interface design",
+      "To reduce or eliminate security risks",
+      "To increase CPU performance",
+      "To simplify software licensing"
+    ],
+    answer: 1,
+    explain: "Hardening aims to minimize security risks by reducing the attack surface and enforcing secure configurations."
+  },
+  {
+    type: "mc",
+    text: "Which is the BEST password policy for high-security environments?",
+    options: [
+      "8+ chars, dictionary words allowed",
+      "12+ chars with upper, number, symbol",
+      "Password never expires",
+      "Share passwords with team leads only"
+    ],
+    answer: 1,
+    explain: "A strong baseline is 12+ characters with complexity; combine with MFA for sensitive environments."
+  },
+  {
+    type: "mc",
+    text: "MFA combines which categories?",
+    options: [
+      "Something you know, something you have, something you are",
+      "Username, password, email",
+      "Token, cookie, session",
+      "Role, group, policy"
+    ],
+    answer: 0,
+    explain: "Knowledge (password/PIN), possession (smart card/token), and inherence (biometrics)."
+  },
+  {
+    type: "mc",
+    text: "Principle of Least Privilege means:",
+    options: [
+      "Everyone gets admin in emergencies",
+      "Users get only the access required for their job",
+      "Admins work without auditing",
+      "Developers manage production passwords"
+    ],
+    answer: 1,
+    explain: "Limit privileges to the minimum necessary to perform assigned duties."
+  },
+  {
+    type: "mc",
+    text: "Why remove or disable unused software/services?",
+    options: [
+      "To free up UI space",
+      "They often introduce vulnerabilities and widen the attack surface",
+      "They increase network speed",
+      "Compliance requirements forbid any services"
+    ],
+    answer: 1,
+    explain: "Each extra component may contain weaknesses; fewer services = fewer entry points for attackers."
+  },
+  {
+    type: "mc",
+    text: "Which services are commonly considered non-essential and transmitted in clear text?",
+    options: ["DNS, ICMP, NTP", "SSH, HTTPS, SFTP", "TFTP, Telnet, SNMP", "RDP, NLA, Kerberos"],
+    answer: 2,
+    explain: "TFTP, Telnet, and many SNMP setups transmit without encryption by default."
+  },
+  {
+    type: "mc",
+    text: "Which statement about essential services is MOST accurate?",
+    options: [
+      "DNS, ICMP, and NTP should always be enabled",
+      "DNS, ICMP, and NTP are essential but should be enabled only when needed",
+      "NTP is insecure and must be blocked globally",
+      "ICMP is only for attackers"
+    ],
+    answer: 1,
+    explain: "Enable essential services strictly as required; if the host isn't a DNS server, don't run DNS service."
+  },
+  {
+    type: "mc",
+    text: "Security software on endpoints should come from:",
+    options: ["Any free download site", "Unknown publishers (faster updates)", "Trusted publishers and must not conflict with other tools", "Multiple overlapping AV engines"],
+    answer: 2,
+    explain: "Use reputable, compatible security tools to avoid conflicts and maintain protection."
+  },
+  {
+    type: "mc",
+    text: "What is a 'baseline' in system hardening?",
+    options: [
+      "A backup copy of the OS",
+      "A standard for configuration, security, software, and usage policies",
+      "A performance threshold for CPUs",
+      "A disaster recovery site"
+    ],
+    answer: 1,
+    explain: "Baselines define standard, secure settings (configuration, security, software, backup/use policies)."
+  },
+  {
+    type: "mc",
+    text: "Which is NOT one of the three baseline types covered?",
+    options: ["Configuration", "Security", "Software & Use", "Network Throughput"],
+    answer: 3,
+    explain: "The three highlighted: Configuration, Security, and Software & Use baselines."
+  },
+  {
+    type: "tf",
+    text: "Baselines should be reviewed and updated regularly as software and policies change.",
+    answer: true,
+    explain: "Baselines are living documents; update them to reflect new software, versions, and policy changes."
+  },
+  {
+    type: "mc",
+    text: "Patch management typically follows which sequence?",
+    options: ["Apply → Audit → Identify → Test", "Identify → Test → Apply → Audit", "Test → Identify → Apply → Audit", "Audit → Identify → Apply → Test"],
+    answer: 1,
+    explain: "Identify what’s needed, test on a pilot/lab, apply to production, and audit results."
+  },
+  {
+    type: "tf",
+    text: "Creating a system restore point before patching is considered a best practice.",
+    answer: true,
+    explain: "A restore point helps you recover quickly if a patch causes regressions."
+  },
+  {
+    type: "mc",
+    text: "Which statement best differentiates hot fix vs. patch vs. service pack?",
+    options: [
+      "Hot fix = broad; Patch = specific; Service pack = single fix",
+      "Hot fix = quick/specific; Patch = tested broader; Service pack = bundle of patches/hot fixes",
+      "All three are identical",
+      "Service pack = emergency fix only"
+    ],
+    answer: 1,
+    explain: "Hot fixes target specific issues; patches are tested for wider deployment; service packs bundle many fixes."
+  },
+  {
+    type: "tf",
+    text: "Running the DNS service on a workstation that is not a DNS server is acceptable as long as a firewall is present.",
+    answer: false,
+    explain: "Disable services your host does not need. Firewalls are not a substitute for removing unnecessary services."
+  }
+];
+
+// Shuffle utility
+function shuffle(array){
+  const a = array.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Render quiz
+const quizEl = document.getElementById('quiz');
+let currentQuestions = [];
+let answeredCount = 0;
+function render(){
+  currentQuestions = shuffle(QUESTIONS);
+  quizEl.innerHTML = "";
+  answeredCount = 0;
+  updateProgress();
+
+  currentQuestions.forEach((q, idx)=>{
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.dataset.index = idx;
+
+    const head = document.createElement('div');
+    head.className = 'q-head';
+    head.innerHTML = `<div class="q-index">${idx+1}</div>
+                      <div class="q-text">${q.text} ${q.type==='tf' ? '<span class="tf">(True/False)</span>' : ''}</div>`;
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+
+    if(q.type === 'tf'){
+      q._opts = ["True","False"];
+    }else{
+      q._opts = shuffle(q.options);
+    }
+
+    q._opts.forEach(optText => {
+      const opt = document.createElement('label');
+      opt.className = 'opt';
+      const id = `q${idx}-${optText.replace(/[^a-z0-9]+/gi,'_')}`;
+      opt.innerHTML = `<input type="radio" name="q${idx}" id="${id}" value="${optText}">
+                       <div>${optText}</div>`;
+      opts.appendChild(opt);
+    });
+
+    const explain = document.createElement('div');
+    explain.className = 'explain';
+    explain.textContent = q.explain;
+
+    card.appendChild(head);
+    card.appendChild(opts);
+    card.appendChild(explain);
+    quizEl.appendChild(card);
+
+    // Event: mark answered for progress
+    opts.addEventListener('change', () => {
+      // Count only the first time a question gets an answer
+      if(!card.dataset.answered){
+        card.dataset.answered = "1";
+        answeredCount++;
+        updateProgress();
+      }
+    });
+  });
+  document.getElementById('score').textContent = "";
+}
+
+function updateProgress(){
+  document.getElementById('progress').textContent = `${answeredCount} / ${currentQuestions.length} answered`;
+}
+
+// Grade quiz
+function grade(showFeedback = true){
+  let correct = 0;
+  currentQuestions.forEach((q, idx)=>{
+    const card = quizEl.querySelector(`section.card[data-index="${idx}"]`);
+    const selected = card.querySelector('input[type="radio"]:checked');
+    const options = card.querySelectorAll('.opt');
+    const explain = card.querySelector('.explain');
+
+    // Reset styles
+    options.forEach(o => { o.classList.remove('correct','incorrect'); });
+
+    if(!selected){
+      if(showFeedback){ explain.style.display = 'block'; }
+      return;
+    }
+
+    let isCorrect = false;
+    if(q.type === 'tf'){
+      isCorrect = (selected.value === (q.answer ? "True" : "False"));
+    }else{
+      // Map selected value back to original index
+      const originalIndex = q.options.indexOf(selected.value);
+      isCorrect = (originalIndex === q.answer);
+    }
+
+    if(isCorrect){
+      correct++;
+      selected.parentElement.classList.add('correct');
+      if(showFeedback){ explain.style.display = 'block'; }
+    }else{
+      selected.parentElement.classList.add('incorrect');
+      if(showFeedback){ explain.style.display = 'block'; }
+    }
+  });
+  const score = `Score: ${correct} / ${currentQuestions.length} (${Math.round((correct/currentQuestions.length)*100)}%)`;
+  document.getElementById('score').textContent = score;
+}
+
+function showAnswers(){
+  currentQuestions.forEach((q, idx)=>{
+    const card = quizEl.querySelector(`section.card[data-index="${idx}"]`);
+    const options = card.querySelectorAll('.opt');
+    const explain = card.querySelector('.explain');
+    explain.style.display = 'block';
+
+    options.forEach(opt => {
+      const text = opt.textContent.trim();
+      let isCorrect = false;
+      if(q.type === 'tf'){
+        isCorrect = ( (q.answer && text==="True") || (!q.answer && text==="False") );
+      }else{
+        const originalIndex = q.options.indexOf(text);
+        isCorrect = (originalIndex === q.answer);
+      }
+      if(isCorrect){
+        opt.classList.add('correct');
+      }
+    });
+  });
+}
+
+document.getElementById('submitBtn').addEventListener('click', ()=> grade(true));
+document.getElementById('retryBtn').addEventListener('click', render);
+document.getElementById('showAnswersBtn').addEventListener('click', showAnswers);
+
+// Initial render
+render();
+</script>
+</body>
+</html>
