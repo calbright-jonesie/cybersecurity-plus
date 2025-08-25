@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Security Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .btn {
+            @apply w-full py-3 px-6 rounded-xl font-medium text-lg transition-colors duration-200 cursor-pointer;
+            background-color: #e5e7eb;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn:hover {
+            background-color: #d1d5db;
+        }
+        .btn.correct {
+            background-color: #10b981;
+            color: white;
+            border-color: #059669;
+        }
+        .btn.incorrect {
+            background-color: #ef4444;
+            color: white;
+            border-color: #dc2626;
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-4 text-gray-800">Operating System Security Quiz</h1>
+        <div id="quiz-container">
+            <!-- Quiz questions will be dynamically inserted here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions, options, and correct answers
+        const questions = [
+            {
+                question: "Which of the following is NOT a key concept of OS security?",
+                options: ["Access Control", "Authentication", "User Awareness", "Data Compression"],
+                answer: "Data Compression"
+            },
+            {
+                question: "What is the primary goal of OS 'hardening'?",
+                options: ["To make the OS unusable", "To make it more secure by modifying its configuration", "To remove all user interfaces", "To increase its performance"],
+                answer: "To make it more secure by modifying its configuration"
+            },
+            {
+                question: "The principle of least functionality states that a system should:",
+                options: ["Run with maximum features for usability", "Run only the required protocols and services", "Be configured to allow all network ports", "Be accessible to all users"],
+                answer: "Run only the required protocols and services"
+            },
+            {
+                question: "What is a recommended security practice for network interfaces?",
+                options: ["Keep all interfaces enabled for flexibility", "Disable all unused interfaces", "Only disable wired interfaces", "Only disable wireless interfaces"],
+                answer: "Disable all unused interfaces"
+            },
+            {
+                question: "Which of these is a workstation hardening strategy mentioned in the outline?",
+                options: ["Install all available software", "Give all users administrative privileges", "Secure peripheral devices like USB ports", "Disable network segmentation"],
+                answer: "Secure peripheral devices like USB ports"
+            },
+            {
+                question: "What is the main purpose of patch management?",
+                options: ["To slow down the system", "To install new features", "To fix vulnerabilities and bugs", "To change the user interface"],
+                answer: "To fix vulnerabilities and bugs"
+            },
+            {
+                question: "For legacy systems where patches are unavailable, what is a recommended approach?",
+                options: ["Do nothing", "Install more software", "Use compensating controls", "Give all users full access"],
+                answer: "Use compensating controls"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizContainer = document.getElementById('quiz-container');
+
+        // Function to render the current question on the page
+        function renderQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const q = questions[currentQuestionIndex];
+                const optionsHtml = q.options.map(option => `
+                    <button class="btn my-2 text-left" onclick="checkAnswer(this)">${option}</button>
+                `).join('');
+
+                quizContainer.innerHTML = `
+                    <div class="mb-6">
+                        <p class="text-xl font-medium mb-4 text-gray-700">Question ${currentQuestionIndex + 1} of ${questions.length}:</p>
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800">${q.question}</h2>
+                        <div class="space-y-4" id="options-container">
+                            ${optionsHtml}
+                        </div>
+                    </div>
+                `;
+            } else {
+                showResults();
+            }
+        }
+
+        // Function to check the selected answer
+        function checkAnswer(selectedButton) {
+            const q = questions[currentQuestionIndex];
+            const optionsContainer = document.getElementById('options-container');
+
+            // Disable all buttons to prevent multiple clicks
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true;
+            });
+
+            // Check if the selected answer is correct
+            if (selectedButton.textContent === q.answer) {
+                score++;
+                selectedButton.classList.add('correct');
+            } else {
+                selectedButton.classList.add('incorrect');
+                // Highlight the correct answer
+                Array.from(optionsContainer.children).forEach(button => {
+                    if (button.textContent === q.answer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+
+            // Move to the next question after a short delay
+            setTimeout(() => {
+                currentQuestionIndex++;
+                renderQuestion();
+            }, 1000);
+        }
+
+        // Function to display the final results
+        function showResults() {
+            quizContainer.innerHTML = `
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-4 text-gray-800">Quiz Complete!</h2>
+                    <p class="text-xl text-gray-700">You scored ${score} out of ${questions.length} questions.</p>
+                    <p class="text-lg mt-2 text-gray-600">${score > questions.length / 2 ? 'Great job!' : 'Keep studying!'}</p>
+                    <button class="mt-8 py-3 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full transition-all duration-300" onclick="restartQuiz()">Restart Quiz</button>
+                </div>
+            `;
+        }
+
+        // Function to restart the quiz
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            renderQuestion();
+        }
+
+        // Initialize the quiz when the page loads
+        document.addEventListener('DOMContentLoaded', renderQuestion);
+    </script>
+
+</body>
+</html>
