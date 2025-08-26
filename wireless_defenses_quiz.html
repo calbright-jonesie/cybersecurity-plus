@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wireless Security & Authentication Quiz</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#121a2b; --accent:#6ee7b7; --accent2:#93c5fd; --text:#e5e7eb; --muted:#94a3b8; --wrong:#fca5a5; --right:#86efac; --btn:#1f2a44;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:radial-gradient(1200px 600px at 80% -10%, #1a2340 0%, #0b1220 60%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;}
+    .container{max-width:980px;margin:0 auto;padding:24px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:clamp(22px,2.8vw,34px);margin:0;line-height:1.1}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0));border:1px solid rgba(255,255,255,0.08);backdrop-filter: blur(6px);border-radius:18px;padding:18px}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--btn);border:1px solid rgba(255,255,255,0.08);color:var(--text);}
+    .chip input{accent-color:var(--accent)}
+    button{cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:var(--btn);color:var(--text);padding:10px 14px;border-radius:12px;font-weight:600}
+    button.primary{background:linear-gradient(90deg, #10b981, #2563eb);border:none}
+    button.ghost{background:transparent}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .progress{height:10px;background:#0f172a;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)}
+    .bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s ease}
+    .question{margin:8px 0 10px}
+    .qtext{font-size:18px;line-height:1.35;font-weight:650}
+    .options{display:grid;gap:10px;margin-top:12px}
+    .opt{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(255,255,255,0.12);padding:12px;border-radius:12px;background:#0f172a}
+    .opt input{margin-top:2px;accent-color:var(--accent)}
+    .opt.correct{border-color:#14532d;background:rgba(34,197,94,.08)}
+    .opt.incorrect{border-color:#7f1d1d;background:rgba(239,68,68,.08)}
+    .muted{color:var(--muted);font-size:14px}
+    .explain{margin-top:8px;font-size:14px;color:#c7d2fe}
+    .footer{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:16px}
+    .pill{padding:6px 10px;border-radius:999px;background:#0f172a;border:1px solid rgba(255,255,255,.08);font-size:12px}
+    .hidden{display:none}
+    .grid{display:grid;gap:14px}
+    .two{grid-template-columns:1fr 1fr}
+    @media (max-width:720px){.two{grid-template-columns:1fr}}
+    .score{font-size:28px;font-weight:800}
+    .tiny{font-size:12px}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:12px;padding:2px 6px;border-radius:6px;background:#0f172a;border:1px solid rgba(255,255,255,.15)}
+    .tag{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#0f172a}
+    .stack{display:flex;flex-wrap:wrap;gap:6px}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Wireless Security & Authentication — Interactive Quiz</h1>
+        <div class="muted small">Covers: Basics, Config, SSID/MAC/Signal, WPA2/WPA3, Access Methods, 802.1X/RADIUS, EAP variants (PEAP/FAST/TLS/TTLS).</div>
+      </div>
+      <div class="stack">
+        <span class="pill" id="progressPill">0 / 0</span>
+        <span class="pill" id="timePill">⏱️ 00:00</span>
+      </div>
+    </header>
+
+    <div class="card grid two">
+      <div>
+        <div class="controls">
+          <label class="chip"><input type="checkbox" class="topic" value="Basics" checked> Basics</label>
+          <label class="chip"><input type="checkbox" class="topic" value="Config" checked> Config</label>
+          <label class="chip"><input type="checkbox" class="topic" value="SSID/MAC/Signal" checked> SSID/MAC/Signal</label>
+          <label class="chip"><input type="checkbox" class="topic" value="WPA2/WPA3" checked> WPA2/WPA3</label>
+          <label class="chip"><input type="checkbox" class="topic" value="Access" checked> Access</label>
+          <label class="chip"><input type="checkbox" class="topic" value="802.1X/RADIUS" checked> 802.1X/RADIUS</label>
+          <label class="chip"><input type="checkbox" class="topic" value="EAP" checked> EAP</label>
+        </div>
+        <div class="controls" style="margin-top:10px">
+          <label class="chip"><input type="number" id="numQ" min="5" max="40" value="15" style="width:70px;background:transparent;border:none;color:var(--text);text-align:center"> # Questions</label>
+          <label class="chip"><input type="checkbox" id="instantCheck" checked> Instant feedback</label>
+          <button id="start" class="primary">Start / Regenerate</button>
+          <button id="resetProgress" class="ghost">Reset Progress</button>
+        </div>
+        <div class="progress" style="margin-top:12px"><div class="bar" id="bar"></div></div>
+      </div>
+      <div>
+        <div class="card" style="background:#0f172a">
+          <div class="small muted">Tips</div>
+          <ul class="small">
+            <li>Use topic chips to tailor the quiz.</li>
+            <li><span class="kbd">Space</span> to submit/next; <span class="kbd">R</span> to reveal answer.</li>
+            <li>Hover explanations appear after grading.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="quiz" class="card" style="margin-top:16px"></div>
+
+    <div id="results" class="card hidden" style="margin-top:16px;">
+      <div class="score" id="score"></div>
+      <div class="muted" id="summary"></div>
+      <div class="stack" style="margin-top:10px" id="tagStats"></div>
+      <div class="footer">
+        <div class="stack" id="reviewChips"></div>
+        <div class="stack">
+          <button id="reviewAll">Review all</button>
+          <button id="retry" class="primary">Retake with new order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// === Data bank (derived from your outlines) ===
+const BANK = [
+  // Basics & Config
+  {q:"Why must wireless networks be secured even before encryption is chosen?", type:"single", opts:["Radio signals can be intercepted beyond intended areas","Wired networks are always faster","Routers block all unknown devices by default","SSID broadcast prevents eavesdropping"], a:[0], exp:"Wi‑Fi uses RF that propagates; without controls, anyone in range can capture traffic.", tags:["Basics"]},
+  {q:"Highest-priority first step on a new AP?", type:"single", opts:["Disable SSID broadcast","Change default admin credentials","Enable MAC filtering","Lower transmit power"], a:[1], exp:"If an attacker has default creds, they control the device.", tags:["Config"]},
+  {q:"SSID best practice?", type:"multi", opts:["Unique but non-identifying","Include address for easy support","Max length 32 bytes","Hiding SSID provides strong security"], a:[0,2], exp:"Keep SSID unique, avoid personal info; hiding offers little security and can cause issues.", tags:["SSID/MAC/Signal"]},
+  {q:"MAC filtering is…", type:"single", opts:["Strong—prevents spoofing","Minimal—can be bypassed","Mandatory for WPA3","Equivalent to 802.1X"], a:[1], exp:"Attackers can sniff allowed MACs and spoof them.", tags:["SSID/MAC/Signal"]},
+  {q:"Which action reduces data emanation risk?", type:"single", opts:["Increase antenna power","Place AP near exterior windows","Tune power and antenna placement","Use WEP"], a:[2], exp:"Lowering power/adjusting placement reduces signal bleed.", tags:["SSID/MAC/Signal"]},
+  {q:"Which should you avoid entirely today?", type:"single", opts:["WPA2","WPA3","WEP","AES-CCMP"], a:[2], exp:"WEP is obsolete and easily cracked.", tags:["Basics"]},
+
+  // WPA2/WPA3 details
+  {q:"WPA2-Personal protects data using:", type:"single", opts:["AES-CCMP","TKIP only","SAE","No encryption"], a:[0], exp:"WPA2-PSK uses AES with CCMP (128‑bit).", tags:["WPA2/WPA3"]},
+  {q:"A weakness of WPA2-PSK is:", type:"single", opts:["Lack of four-way handshake","Vulnerable to offline password attacks if PSK is weak","Requires client certs","Incompatible with RADIUS"], a:[1], exp:"Captured handshakes enable offline cracking of weak PSKs.", tags:["WPA2/WPA3"]},
+  {q:"WPA3 replaces PSK with:", type:"single", opts:["PEAP","SAE (Simultaneous Authentication of Equals)","PAC","Open auth"], a:[1], exp:"SAE provides stronger handshake and forward secrecy.", tags:["WPA2/WPA3"]},
+  {q:"Perfect forward secrecy in WPA3 means:", type:"single", opts:["Same key reused","New keys per session/exchange","Server-only certs required","MAC filtering is enforced"], a:[1], exp:"Compromise of one exchange doesn't expose others.", tags:["WPA2/WPA3"]},
+
+  // Access methods
+  {q:"PSK means:", type:"single", opts:["Per‑user certificates","A shared passphrase","Open network","Captive web login"], a:[1], exp:"Pre‑Shared Key = shared passphrase.", tags:["Access"]},
+  {q:"WPS characteristics (select all that apply)", type:"multi", opts:["Works with WPA2‑PSK","Button/PIN/NFC options","Uses 802.1X","Eliminates the need for any passphrase"], a:[0,1], exp:"WPS simplifies joining to a WPA2‑PSK network.", tags:["Access"]},
+  {q:"Open network should be used mainly for:", type:"single", opts:["Private enterprise","Home networks","Public/free access","High‑security labs"], a:[2], exp:"Open networks are for public access and often fronted by captive portals.", tags:["Access"]},
+  {q:"Captive portal:", type:"single", opts:["Encrypts Wi‑Fi traffic","Web step before internet access","Requires RADIUS","Is the same as WPA3"], a:[1], exp:"Portal gates internet after association; it doesn't encrypt Wi‑Fi.", tags:["Access"]},
+
+  // 802.1X / RADIUS
+  {q:"Enterprise Wi‑Fi commonly uses:", type:"single", opts:["PSK only","802.1X with RADIUS","MAC filtering","WPS"], a:[1], exp:"802.1X + RADIUS enables per‑user auth and policy.", tags:["802.1X/RADIUS"]},
+  {q:"In 802.1X, the authenticator is typically:", type:"single", opts:["RADIUS server","Wireless client","AP/NAS","Captive portal"], a:[2], exp:"The AP (NAS) brokers between supplicant and RADIUS.", tags:["802.1X/RADIUS"]},
+  {q:"RADIUS provides which trio?", type:"single", opts:["Availability, Auditing, Accounting","Authentication, Authorization, Accounting","Authentication, Auditing, Availability","Accounting, Auditing, Access"], a:[1], exp:"AAA = Authentication, Authorization, Accounting.", tags:["802.1X/RADIUS"]},
+  {q:"EAP is:", type:"single", opts:["A single fixed protocol","A framework supporting multiple methods","Only for wired networks","Obsolete"], a:[1], exp:"EAP defines a method framework used over 802.1X.", tags:["EAP"]},
+
+  // EAP variants
+  {q:"PEAP requires:", type:"single", opts:["Server certificate only","Client certificate only","Both client and server certs","No certificates"], a:[0], exp:"PEAP makes a TLS tunnel with a server cert; inner method handles user auth.", tags:["EAP"]},
+  {q:"EAP‑FAST uses what for authentication?", type:"single", opts:["PSK","SAE","PAC (Protected Access Credential)","Client certificate only"], a:[2], exp:"EAP‑FAST replaces server cert with PAC to form the tunnel.", tags:["EAP"]},
+  {q:"EAP‑TLS is considered strongest because:", type:"single", opts:["Uses PAC","No certificates needed","Mutual auth with client & server certificates","Relies on captive portal"], a:[2], exp:"Mutual certificate‑based auth; handshake is fully protected.", tags:["EAP"]},
+  {q:"Main trade‑off with EAP‑TLS:", type:"single", opts:["Weak security","Complexity/cost of issuing client certs","Incompatible with Windows","Requires open network"], a:[1], exp:"Every client needs a CA‑signed certificate.", tags:["EAP"]},
+  {q:"EAP‑TTLS differs from EAP‑TLS by:", type:"single", opts:["Requiring only server cert","Requiring only client cert","Not using TLS at all","Using SAE"], a:[0], exp:"TTLS simplifies deployment: only the server presents a certificate.", tags:["EAP"]}
+];
+
+// === Helpers ===
+const $ = (sel, ctx=document) => ctx.querySelector(sel);
+const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+function formatTime(sec){const m=Math.floor(sec/60).toString().padStart(2,'0');const s=(sec%60).toString().padStart(2,'0');return `${m}:${s}`}
+
+// === State ===
+let state = { order:[], answers:{}, revealed:{}, startAt:null, elapsed:0, instant:true };
+
+// === Persistence ===
+const KEY = 'wifi_quiz_state_v1';
+function save(){ localStorage.setItem(KEY, JSON.stringify({state, version:1})) }
+function load(){ try{ const raw = localStorage.getItem(KEY); if(!raw) return; const obj = JSON.parse(raw); if(obj?.version===1){ state = obj.state; }}catch(e){} }
+
+// === Build Quiz ===
+function build(){
+  const selectedTopics = $$('.topic').filter(c=>c.checked).map(c=>c.value);
+  const pool = BANK.filter(q=>q.tags.some(t=>selectedTopics.includes(t)));
+  const N = Math.max(5, Math.min(parseInt($('#numQ').value||15,10), 40));
+  const order = shuffle(pool).slice(0,N).map((q,i)=>({id: i, q: JSON.parse(JSON.stringify(q))}));
+  order.forEach(item=>{ item.q.opts = shuffle(item.q.opts) });
+  state.order = order; state.answers = {}; state.revealed={}; state.startAt = Date.now(); state.elapsed=0; state.instant = $('#instantCheck').checked;
+  $('#results').classList.add('hidden');
+  render();
+  save();
+}
+
+function render(){
+  const wrap = $('#quiz');
+  if(!state.order.length){ wrap.innerHTML = '<div class="muted">Click <b>Start</b> to generate a quiz.</div>'; return; }
+  const total = state.order.length;
+  const answered = Object.keys(state.answers).length;
+  $('#progressPill').textContent = `${answered} / ${total}`;
+  $('#bar').style.width = `${(answered/total)*100}%`;
+
+  wrap.innerHTML = '';
+  state.order.forEach((item, idx)=>{
+    const {q} = item;
+    const optType = q.type==='multi' ? 'checkbox' : 'radio';
+    const your = state.answers[idx] || [];
+    const reveal = state.revealed[idx] || (state.instant && your.length);
+
+    const card = document.createElement('div');
+    card.className = 'question';
+    card.innerHTML = `
+      <div class="qtext">${idx+1}. ${q.q}</div>
+      <div class="muted tiny">Type: ${q.type.toUpperCase()} ${q.tags?.length? ' • '+q.tags.join(', '):''}</div>
+      <div class="options"></div>
+      <div class="explain ${reveal? '': 'hidden'}">${q.exp}</div>
+    `;
+    const optsDiv = card.querySelector('.options');
+    q.opts.forEach((opt, i)=>{
+      const id = `q${idx}_o${i}`;
+      const row = document.createElement('label');
+      row.className = 'opt';
+      const inp = document.createElement('input');
+      inp.type = optType; inp.name = `q${idx}`; inp.value = i;
+      if(your.includes(i)) inp.checked = true;
+      inp.addEventListener('change', ()=>{
+        if(q.type==='single' || q.type==='tf') state.answers[idx] = [i];
+        if(q.type==='multi'){
+          const prev = new Set(state.answers[idx]||[]);
+          inp.checked ? prev.add(i) : prev.delete(i);
+          state.answers[idx] = Array.from(prev);
+        }
+        if(state.instant){ state.revealed[idx] = true; }
+        render(); save();
+      });
+      const txt = document.createElement('div');
+      txt.innerHTML = opt;
+      row.appendChild(inp); row.appendChild(txt);
+      // Marking
+      if(reveal){
+        const correct = q.a.includes(i);
+        const picked = your.includes(i);
+        if(correct && picked) row.classList.add('correct');
+        if(!correct && picked) row.classList.add('incorrect');
+        if(correct && !picked) row.classList.add('correct');
+      }
+      optsDiv.appendChild(row);
+    });
+
+    // Action row
+    const footer = document.createElement('div');
+    footer.className = 'footer';
+    const left = document.createElement('div'); left.className='stack';
+    const btnReveal = document.createElement('button'); btnReveal.textContent = 'Reveal';
+    btnReveal.addEventListener('click',()=>{ state.revealed[idx]=true; render(); save(); });
+    const btnClear = document.createElement('button'); btnClear.textContent = 'Clear';
+    btnClear.addEventListener('click',()=>{ delete state.answers[idx]; render(); save(); });
+    left.appendChild(btnReveal); left.appendChild(btnClear);
+
+    const right = document.createElement('div'); right.className='stack';
+    const tagWrap = document.createElement('div'); tagWrap.className='stack';
+    (q.tags||[]).forEach(t=>{ const s=document.createElement('span'); s.className='tag'; s.textContent=t; tagWrap.appendChild(s); });
+    right.appendChild(tagWrap);
+
+    footer.appendChild(left); footer.appendChild(right);
+    card.appendChild(footer);
+    wrap.appendChild(card);
+  });
+}
+
+function grade(){
+  const total = state.order.length; let correct=0, attempted=0;
+  const perTag = {};
+  state.order.forEach((item, idx)=>{
+    const picked = new Set(state.answers[idx]||[]);
+    if(picked.size) attempted++;
+    const ans = new Set(item.q.a);
+    const ok = picked.size===ans.size && [...picked].every(x=>ans.has(x));
+    if(ok) correct++;
+    (item.q.tags||[]).forEach(t=>{
+      perTag[t] = perTag[t]||{right:0,total:0};
+      perTag[t].total++;
+      if(ok) perTag[t].right++;
+    });
+  });
+  return {total, correct, attempted, perTag};
+}
+
+function showResults(){
+  const g = grade();
+  const pct = Math.round((g.correct/g.total)*100);
+  $('#score').textContent = `Score: ${g.correct} / ${g.total} (${pct}%)`;
+  $('#summary').textContent = `Attempted ${g.attempted} of ${g.total}. Time: ${formatTime(state.elapsed)}.`;
+  const tagStats = $('#tagStats'); tagStats.innerHTML='';
+  Object.entries(g.perTag).forEach(([t,v])=>{
+    const span = document.createElement('span');
+    const p = Math.round((v.right/v.total)*100);
+    span.className='tag'; span.textContent = `${t}: ${p}%`;
+    tagStats.appendChild(span);
+  });
+
+  // Review chips
+  const review = $('#reviewChips'); review.innerHTML='';
+  const missedIdx = state.order.map((_,i)=>i).filter(i=>{
+    const picked = new Set(state.answers[i]||[]);
+    const ans = new Set(state.order[i].q.a);
+    return !(picked.size===ans.size && [...picked].every(x=>ans.has(x)));
+  });
+  if(!missedIdx.length){
+    const span = document.createElement('span'); span.className='tag'; span.textContent='Perfect! 🎉'; review.appendChild(span);
+  } else {
+    missedIdx.forEach(i=>{ const b=document.createElement('button'); b.textContent=`Review Q${i+1}`; b.addEventListener('click',()=>{
+      state.revealed[i]=true; window.scrollTo({top: $('#quiz').children[i].offsetTop-20, behavior:'smooth'}); render();
+    }); review.appendChild(b); });
+  }
+
+  $('#results').classList.remove('hidden');
+}
+
+// Timer
+let tick=null; function startTimer(){ if(tick) clearInterval(tick); state.startAt=Date.now(); tick=setInterval(()=>{ state.elapsed = Math.floor((Date.now()-state.startAt)/1000); $('#timePill').textContent = '⏱️ '+formatTime(state.elapsed); }, 1000); }
+
+// Events
+$('#start').addEventListener('click', ()=>{ build(); startTimer(); $('#progressPill').textContent = `0 / ${state.order.length}`; });
+$('#resetProgress').addEventListener('click', ()=>{ localStorage.removeItem(KEY); state={order:[],answers:{},revealed:{},startAt:null,elapsed:0,instant:true}; render(); $('#results').classList.add('hidden'); $('#progressPill').textContent='0 / 0'; $('#timePill').textContent='⏱️ 00:00'; });
+$('#retry').addEventListener('click', ()=>{ build(); });
+$('#reviewAll').addEventListener('click', ()=>{ state.revealed = Object.fromEntries(state.order.map((_,i)=>[i,true])); render(); });
+$('#instantCheck').addEventListener('change', (e)=>{ state.instant = e.target.checked; save(); });
+
+document.addEventListener('keydown', (e)=>{
+  if(e.code==='Space'){ e.preventDefault(); showResults(); }
+  if(e.key.toLowerCase()==='r'){ e.preventDefault(); state.revealed = Object.fromEntries(state.order.map((_,i)=>[i,true])); render(); }
+});
+
+// Restore previous session if available
+load(); if(state.order.length){ render(); startTimer(); $('#results').classList.add('hidden'); }
+</script>
+</body>
+</html>
