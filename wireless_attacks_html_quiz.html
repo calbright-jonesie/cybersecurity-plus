@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wireless Attacks – Study Quiz</title>
+  <style>
+    :root {
+      --bg: #0f172a;          /* slate-900 */
+      --panel: #111827;       /* gray-900 */
+      --panel-2: #1f2937;     /* gray-800 */
+      --accent: #22d3ee;      /* cyan-400 */
+      --accent-2: #14b8a6;    /* teal-500 */
+      --text: #e5e7eb;        /* gray-200 */
+      --muted: #9ca3af;       /* gray-400 */
+      --correct: #16a34a;     /* green-600 */
+      --wrong: #ef4444;       /* red-500 */
+      --warn: #f59e0b;        /* amber-500 */
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 20% 0%, #0b1221, var(--bg));
+      color: var(--text);
+    }
+    .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+    header {
+      display: grid; gap: 8px; margin-bottom: 16px;
+    }
+    h1 { font-size: clamp(1.6rem, 2.5vw, 2rem); margin: 0; }
+    .subtitle { color: var(--muted); font-size: .95rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    button, .chip { cursor: pointer; background: var(--panel-2); border: 1px solid #334155; color: var(--text); padding: 10px 14px; border-radius: 12px; font-weight: 600; transition: transform .05s ease, background .2s ease, border-color .2s ease; }
+    button:hover, .chip:hover { background: #263244; }
+    button:active { transform: translateY(1px); }
+    .chip.active { border-color: var(--accent); color: white; box-shadow: 0 0 0 2px #0e7490 inset; }
+
+    .panel { background: linear-gradient(180deg, rgba(31,41,55,.7), rgba(17,24,39,.7)); border: 1px solid #334155; border-radius: 16px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .grid { display: grid; gap: 14px; }
+
+    .question { border: 1px dashed #374151; border-radius: 12px; padding: 14px; background: rgba(17,24,39,.5); }
+    .q-title { font-weight: 700; margin-bottom: 10px; }
+    .answers { display: grid; gap: 8px; }
+    .answer { border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; background: #0b1322; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+    .answer input { transform: scale(1.2); }
+    .explanation { margin-top: 8px; color: var(--muted); display: none; }
+    .explanation.visible { display: block; }
+    .badge { font-size: .85rem; font-weight: 700; padding: 4px 8px; border-radius: 999px; }
+    .badge.correct { color: white; background: var(--correct); }
+    .badge.wrong { color: white; background: var(--wrong); }
+
+    .footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; color: var(--muted); }
+    .progress { height: 8px; background: #111827; border-radius: 999px; overflow: hidden; border: 1px solid #334155; }
+    .progress > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0%; transition: width .3s ease; }
+
+    .score { font-weight: 800; font-size: 1.1rem; }
+    .hidden { display: none !important; }
+
+    .key { margin-top: 8px; font-size: .95rem; line-height: 1.5; }
+    .key details { border: 1px solid #334155; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+    .key summary { background: #0b1322; padding: 10px 14px; cursor: pointer; font-weight: 700; }
+    .key .content { padding: 10px 14px; background: #0f172a; }
+
+    @media (min-width: 820px) {
+      .grid { grid-template-columns: 1fr 360px; align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Wireless Attacks – Interactive Quiz</h1>
+      <p class="subtitle">Covers Wi‑Fi (Rogue AP, Evil Twin, IV/WEP, Jamming, Deauth), Bluetooth (Bluejacking/Bluesnarfing), RFID & NFC.</p>
+      <div class="controls">
+        <button id="checkBtn" title="Grade all answered questions">Check Answers</button>
+        <button id="retryBtn" title="Clear selections and start over">Reset</button>
+        <button id="shuffleBtn" title="Shuffle question order">Shuffle</button>
+        <span class="chip" id="instantToggle" title="Show explanations immediately after selecting">Instant Feedback</span>
+        <span class="chip" id="showKey" title="Reveal the full answer key">Show Key</span>
+        <span class="chip" id="hideKey" title="Hide the answer key" style="display:none;">Hide Key</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <main class="panel" id="quiz"></main>
+
+      <aside class="panel" id="sidebar">
+        <div class="footer">
+          <div>
+            <div class="score" id="score">Score: 0 / 0</div>
+            <div id="status">Answer questions, then click <strong>Check Answers</strong>.</div>
+          </div>
+        </div>
+        <div style="margin:12px 0 6px;">Progress</div>
+        <div class="progress" aria-label="Progress"><div id="progressBar"></div></div>
+        <div class="key" id="answerKey" style="display:none;">
+          <details open>
+            <summary>Answer Key</summary>
+            <div class="content" id="keyContent"></div>
+          </details>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const data = [
+      {
+        q: "Why are wireless networks (Wi‑Fi, Bluetooth, RFID, NFC) especially vulnerable?",
+        choices: [
+          "They use unbounded/open-air communication",
+          "They always use weak encryption",
+          "They require physical cables that can be cut",
+          "They cannot authenticate devices"
+        ],
+        answer: 0,
+        explain: "Radio signals propagate beyond physical boundaries, making interception and injection easier."
+      },
+      {
+        q: "What is a rogue access point?",
+        choices: [
+          "A Wi‑Fi network with a hidden SSID",
+          "An unauthorized AP added by a user or attacker (soft AP or hidden device)",
+          "A legitimate AP with outdated firmware",
+          "Any public hotspot"
+        ],
+        answer: 1,
+        explain: "Users/attackers may deploy a soft AP or tiny hardware (e.g., Raspberry Pi) to bypass controls."
+      },
+      {
+        q: "Which attack duplicates a legitimate SSID and forces users to connect to it?",
+        choices: ["Rogue Beacon", "Evil Twin", "Man-in-the-Middle", "WarDriving"],
+        answer: 1,
+        explain: "Evil Twin mimics the SSID and often uses jamming/deauth to steer clients to the attacker AP."
+      },
+      {
+        q: "What technique is commonly used to kick clients off the legitimate AP in an Evil Twin setup?",
+        choices: ["ARP poisoning", "Deauthentication/Disassociation", "DNS spoofing", "Port scanning"],
+        answer: 1,
+        explain: "Unencrypted management frames allow sending fake deauth/disassoc frames to disconnect clients."
+      },
+      {
+        q: "What best describes a jamming attack?",
+        choices: [
+          "Sending excessive TCP SYN packets",
+          "Overpowering Wi‑Fi frequencies with noise to block signals",
+          "Altering routing tables",
+          "Spoofing DHCP offers"
+        ],
+        answer: 1,
+        explain: "A jammer transmits a strong signal on the same frequencies so devices can't communicate."
+      },
+      {
+        q: "Why is WEP considered insecure?",
+        choices: [
+          "It has no authentication",
+          "Its IV is only 24 bits and repeats frequently",
+          "It uses AES-256 which is too slow",
+          "It requires certificates"
+        ],
+        answer: 1,
+        explain: "24-bit IV repeats ~every 4096 packets, letting attackers recover keys by collecting IVs."
+      },
+      {
+        q: "What is the role of an Initialization Vector (IV) in encryption?",
+        choices: [
+          "Replace the secret key",
+          "Add randomness so each encryption of the same data/key is unique",
+          "Compress the payload",
+          "Authenticate management frames"
+        ],
+        answer: 1,
+        explain: "IVs provide non-reuse randomness, preventing identical ciphertexts under the same key."
+      },
+      {
+        q: "Which statement about deauthentication attacks is TRUE?",
+        choices: [
+          "They require special illegal hardware",
+          "They can be launched from a laptop by forging management frames",
+          "They only affect one client at a time",
+          "They target only Bluetooth devices"
+        ],
+        answer: 1,
+        explain: "Because Wi‑Fi management frames are typically unencrypted, a laptop can forge deauth packets."
+      },
+      {
+        q: "Bluejacking is best described as:",
+        choices: [
+          "Taking over a Bluetooth device's mic/camera",
+          "Sending unsolicited messages to a discoverable device",
+          "Cloning a Bluetooth MAC address",
+          "Pairing via OBEX to steal files"
+        ],
+        answer: 1,
+        explain: "It's mostly a nuisance: pushing unwanted messages to devices left in discovery mode."
+      },
+      {
+        q: "Bluesnarfing primarily exploits which protocol to steal data?",
+        choices: ["EAP", "OBEX", "WPA2", "Zigbee"],
+        answer: 1,
+        explain: "Bluesnarfing abuses vulnerabilities in OBEX to pair and silently access data."
+      },
+      {
+        q: "Best defense against Bluejacking/Bluesnarfing?",
+        choices: [
+          "Set a longer SSID",
+          "Disable Bluetooth or avoid Discovery Mode when not needed",
+          "Change Wi‑Fi channel daily",
+          "Use WEP for compatibility"
+        ],
+        answer: 1,
+        explain: "Turn off Bluetooth when unused and don't leave devices discoverable."
+      },
+      {
+        q: "Which is TRUE about RFID tags?",
+        choices: [
+          "Active tags are unpowered and short‑range",
+          "Passive tags have onboard batteries",
+          "Active tags have batteries and longer range; passive rely on reader power",
+          "Both types require line‑of‑sight"
+        ],
+        answer: 2,
+        explain: "Active = battery/long range (e.g., toll tags); Passive = reader-powered (ID badges, cards)."
+      },
+      {
+        q: "A likely RFID threat is:",
+        choices: ["Buffer overflow", "Tag cloning via close-range scanning", "SQL injection", "SS7 interception"],
+        answer: 1,
+        explain: "Attackers can eavesdrop or scan/clone RFID tags when in close proximity."
+      },
+      {
+        q: "NFC security characteristic:",
+        choices: [
+          "Inherently safe at any distance",
+          "Same risks as RFID but requires very close proximity (few cm)",
+          "Requires Internet to function",
+          "Unaffected by eavesdropping"
+        ],
+        answer: 1,
+        explain: "NFC inherits RFID-style risks but works at extremely short ranges (tap/near-tap)."
+      },
+      {
+        q: "Which wireless standard should NOT be used today?",
+        choices: ["WPA3", "WPA2", "WEP", "802.11ax"],
+        answer: 2,
+        explain: "WEP is deprecated due to IV/key weaknesses and should be avoided entirely."
+      },
+      {
+        q: "What is a practical way to detect Evil Twin/Rogue APs at work?",
+        choices: [
+          "Rely on DHCP logs only",
+          "Regular site surveys for unauthorized SSIDs/APs",
+          "Disable SSID broadcast on all APs",
+          "Increase TX power on legitimate APs"
+        ],
+        answer: 1,
+        explain: "Periodic RF/site surveys help locate unauthorized/rogue APs and Evil Twins."
+      }
+    ];
+
+    let instant = false;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function render() {
+      const quiz = document.getElementById('quiz');
+      quiz.innerHTML = '';
+
+      data.forEach((item, idx) => {
+        const qWrap = document.createElement('section');
+        qWrap.className = 'question';
+        qWrap.dataset.index = idx;
+
+        const title = document.createElement('div');
+        title.className = 'q-title';
+        title.innerHTML = `<span style="color:var(--accent)">Q${idx+1}.</span> ${item.q}`;
+        qWrap.appendChild(title);
+
+        const answers = document.createElement('div');
+        answers.className = 'answers';
+
+        item.choices.forEach((choice, cIdx) => {
+          const ans = document.createElement('label');
+          ans.className = 'answer';
+          ans.innerHTML = `
+            <span>${choice}</span>
+            <input type="radio" name="q_${idx}" value="${cIdx}" aria-label="${choice}">
+          `;
+          answers.appendChild(ans);
+        });
+
+        const exp = document.createElement('div');
+        exp.className = 'explanation';
+        exp.id = `exp_${idx}`;
+        exp.textContent = item.explain;
+
+        qWrap.appendChild(answers);
+        qWrap.appendChild(exp);
+        quiz.appendChild(qWrap);
+      });
+
+      updateScore();
+      updateKey();
+    }
+
+    function getSelections() {
+      return data.map((_, i) => {
+        const sel = document.querySelector(`input[name="q_${i}"]:checked`);
+        return sel ? Number(sel.value) : null;
+      });
+    }
+
+    function grade() {
+      const selections = getSelections();
+      let correct = 0;
+      selections.forEach((sel, i) => {
+        const exp = document.getElementById(`exp_${i}`);
+        const qWrap = document.querySelector(`.question[data-index="${i}"]`);
+        qWrap.querySelectorAll('.badge').forEach(b => b.remove());
+
+        if (sel === null) {
+          exp.classList.remove('visible');
+          return;
+        }
+
+        if (sel === data[i].answer) {
+          correct++;
+          const ok = document.createElement('span');
+          ok.className = 'badge correct';
+          ok.textContent = 'Correct';
+          qWrap.querySelector('.q-title').appendChild(ok);
+          exp.classList.add('visible');
+        } else {
+          const bad = document.createElement('span');
+          bad.className = 'badge wrong';
+          bad.textContent = 'Incorrect';
+          qWrap.querySelector('.q-title').appendChild(bad);
+          exp.classList.add('visible');
+        }
+      });
+      const answered = selections.filter(x => x !== null).length;
+      updateScore(correct, answered);
+    }
+
+    function updateScore(correct = 0, answered = 0) {
+      const total = data.length;
+      if (answered === 0) {
+        document.getElementById('score').textContent = `Score: 0 / ${total}`;
+        document.getElementById('status').innerHTML = 'Answer questions, then click <strong>Check Answers</strong>.';
+      } else {
+        const pct = Math.round((correct / total) * 100);
+        document.getElementById('score').textContent = `Score: ${correct} / ${total} (${pct}%)`;
+        document.getElementById('status').textContent = `${answered} answered, ${total - answered} to go.`;
+      }
+      const progress = Math.round((answered / total) * 100);
+      document.getElementById('progressBar').style.width = progress + '%';
+    }
+
+    function resetAll() {
+      document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
+      document.querySelectorAll('.explanation').forEach(e => e.classList.remove('visible'));
+      document.querySelectorAll('.badge').forEach(b => b.remove());
+      updateScore();
+    }
+
+    function doShuffle() {
+      shuffle(data);
+      data.forEach(item => shuffle(item.choices));
+      render();
+      resetAll();
+    }
+
+    function updateKey() {
+      const key = document.getElementById('keyContent');
+      key.innerHTML = data.map((item, i) => {
+        return `<div style="margin:6px 0;"><strong>Q${i+1}.</strong> ${item.q}<br>Answer: <em>${item.choices[item.answer]}</em><br><span style="color:var(--muted)">${item.explain}</span></div>`
+      }).join('');
+    }
+
+    // Event listeners
+    document.getElementById('checkBtn').addEventListener('click', grade);
+    document.getElementById('retryBtn').addEventListener('click', resetAll);
+    document.getElementById('shuffleBtn').addEventListener('click', doShuffle);
+
+    document.getElementById('instantToggle').addEventListener('click', (e) => {
+      instant = !instant;
+      e.currentTarget.classList.toggle('active', instant);
+      e.currentTarget.textContent = instant ? 'Instant: On' : 'Instant Feedback';
+    });
+
+    document.getElementById('showKey').addEventListener('click', () => {
+      document.getElementById('answerKey').style.display = '';
+      document.getElementById('showKey').style.display = 'none';
+      document.getElementById('hideKey').style.display = '';
+    });
+    document.getElementById('hideKey').addEventListener('click', () => {
+      document.getElementById('answerKey').style.display = 'none';
+      document.getElementById('hideKey').style.display = 'none';
+      document.getElementById('showKey').style.display = '';
+    });
+
+    // Instant feedback handler (delegate)
+    document.addEventListener('change', (e) => {
+      if (!instant) return;
+      if (e.target.matches('input[type="radio"][name^="q_"]')) {
+        grade();
+      }
+    }, true);
+
+    // Initialize
+    render();
+  </script>
+</body>
+</html>
