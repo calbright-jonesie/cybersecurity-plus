@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Incident Response & Mitigation Quiz</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #111833;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #6ee7b7;
+      --accent-2: #60a5fa;
+      --wrong: #f87171;
+      --right: #34d399;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 80% -10%, #1f2a49 0%, var(--bg) 35%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+    header { display: grid; gap: 8px; margin-bottom: 16px; }
+    h1 { margin: 0; font-size: 28px; letter-spacing: .2px; }
+    p.sub { margin: 0; color: var(--muted); }
+
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px;
+    }
+    button, select {
+      border: 0; padding: 10px 14px; border-radius: 12px; cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #04101a; font-weight: 700;
+      transition: transform .05s ease-in-out, filter .15s ease-in-out;
+    }
+    button.secondary { background: #1b2550; color: var(--text); border: 1px solid #2a377a; }
+    button.ghost { background: transparent; color: var(--muted); border: 1px dashed #32407a; }
+    button:active { transform: scale(0.98); }
+
+    .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+
+    .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08));
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 20px; overflow: hidden; }
+    .card header { padding: 16px 16px 0 16px; }
+    .card .content { padding: 16px; }
+
+    .question {
+      background: var(--card); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.06);
+    }
+    .q-head { display:flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .q-title { font-weight: 700; }
+    .q-topic { font-size: 12px; color: var(--muted); padding: 2px 8px; border-radius: 999px; border:1px solid #2c355e; }
+
+    .options { display: grid; gap: 10px; margin-top: 12px; }
+    .option {
+      background: #0f1731; padding: 12px; border-radius: 12px; border: 1px solid #223066; cursor: pointer; position: relative;
+    }
+    .option input { position: absolute; opacity: 0; pointer-events: none; }
+    .option:hover { filter: brightness(1.1); }
+    .option.correct { outline: 2px solid var(--right); border-color: var(--right); }
+    .option.incorrect { outline: 2px solid var(--wrong); border-color: var(--wrong); }
+
+    .status { display:flex; gap: 10px; align-items: center; margin-top: 8px; color: var(--muted); font-size: 14px; }
+    .pill { padding: 4px 10px; border-radius: 999px; background: #0e1533; border: 1px solid #29326a; }
+
+    .footer { display:flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-top: 12px; }
+
+    .results { display: grid; gap: 10px; }
+    .bar {
+      height: 12px; width: 100%; background: #111827; border-radius: 999px; overflow: hidden; border: 1px solid #24304f;
+    }
+    .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--right), var(--accent-2)); transition: width .6s ease; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { font-size: 12px; color: var(--muted); padding: 4px 8px; border: 1px solid #2b365f; border-radius: 999px; }
+
+    .hidden { display: none !important; }
+    .muted { color: var(--muted); }
+
+    @media (min-width: 820px) {
+      .grid { grid-template-columns: 1.25fr .75fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Incident Response & Mitigation Quiz</h1>
+      <p class="sub">Covers: Incident Response lifecycle, Isolation vs Containment vs Segmentation, and Assessment vs Investigation. Shuffle, practice, and get instant feedback.</p>
+      <div class="controls">
+        <button id="startBtn">Start / Shuffle</button>
+        <button id="checkBtn" class="secondary">Check Answers</button>
+        <button id="showAnswersBtn" class="secondary">Reveal Correct</button>
+        <button id="resetBtn" class="ghost">Reset</button>
+        <select id="filter">
+          <option value="all">All Topics</option>
+          <option value="IR">Incident Response</option>
+          <option value="ICS">Isolation/Containment/Segmentation</option>
+          <option value="AI">Assessment vs Investigation</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <header>
+          <h2 style="margin:0">Questions</h2>
+          <p class="sub">Click an option to select. You can change your choice anytime before checking.</p>
+        </header>
+        <div class="content" id="questions"></div>
+      </section>
+
+      <aside class="card">
+        <header>
+          <h2 style="margin:0">Score & Insights</h2>
+          <p class="sub">Track progress and focus areas.</p>
+        </header>
+        <div class="content">
+          <div class="results">
+            <div class="status"><span class="pill" id="count">0/0 answered</span><span class="pill" id="score">Score: 0%</span></div>
+            <div class="bar"><div id="scoreBar"></div></div>
+            <div class="tags" id="weakTags"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // Question bank built from user's cheat sheets
+    const BANK = [
+      // INCIDENT RESPONSE (IR)
+      { id:1, topic:'IR', type:'mc', q:'Primary goal of Incident Response (IR) is to…', options:['Completely prevent all attacks','Limit damage and reduce recovery time/costs','Attribute every attack to an actor','Collect legal evidence only'], a:1 },
+      { id:2, topic:'IR', type:'multi', q:'Select the seven IR lifecycle steps.', options:['Preparation','Detection','Analysis','Containment','Eradication','Recovery','Lessons learned','Prosecution'], a:[0,1,2,3,4,5,6] },
+      { id:3, topic:'IR', type:'mc', q:'Which is MOST associated with the Preparation phase?', options:['Changing passwords after an incident','Hardening systems and defining policies','Restoring from backups','Disconnecting affected hosts'], a:1 },
+      { id:4, topic:'IR', type:'multi', q:'Valid detection sources include… (pick all that apply)', options:['Automated alerts/IDS','Threat hunting','Employee/customer reports','Restoring systems'], a:[0,1,2] },
+      { id:5, topic:'IR', type:'mc', q:'Containment is best described as…', options:['Permanent fix','Quick action to stop spread before eradication','Post-incident review','Routine monitoring'], a:1 },
+      { id:6, topic:'IR', type:'multi', q:'Recovery activities include… (pick all)', options:['Reinstalling components','Patching software','Changing passwords','Careful monitoring for abnormal activity','Disconnecting VPNs permanently'], a:[0,1,2,3] },
+      { id:7, topic:'IR', type:'mc', q:'Purpose of the Lessons Learned phase?', options:['Collect logs only','Identify improvements and update policies/processes/training','Assign blame','Buy new hardware'], a:1 },
+
+      // ISOLATION / CONTAINMENT / SEGMENTATION (ICS)
+      { id:8, topic:'ICS', type:'mc', q:'Isolation primarily aims to…', options:['Divide the network into zones','Limit a compromised asset/process from harming others','Provide remote access to DMZ','Tune IDS signatures'], a:1 },
+      { id:9, topic:'ICS', type:'mc', q:'Which best illustrates process isolation?', options:['Two VLANs with ACLs','A sandboxed app cannot read another app\'s memory','A site-to-site VPN','A second firewall in front of the DMZ'], a:1 },
+      { id:10, topic:'ICS', type:'mc', q:'Containment occurs…', options:['Before detection','After an event is detected and identified','Only during lessons learned','Only during recovery'], a:1 },
+      { id:11, topic:'ICS', type:'multi', q:'Containment actions might include… (pick all)', options:['Unplug Ethernet/disable NIC','Terminate inter-network links/VPN','Wait to preserve all evidence before acting','Prioritize limiting damage'], a:[0,1,3] },
+      { id:12, topic:'ICS', type:'mc', q:'Key trade-off during containment is between…', options:['Performance vs. cost','Preventing spread vs. preserving forensic evidence','Cloud vs. on‑prem','Encryption vs. compression'], a:1 },
+      { id:13, topic:'ICS', type:'mc', q:'Segmentation is primarily…', options:['An emergency action','A strategic network design to block lateral movement','User awareness training','Log retention policy'], a:1 },
+      { id:14, topic:'ICS', type:'multi', q:'Ways to implement segmentation include… (pick all)', options:['VLANs','Software-defined networking','Switches/subnetting','Physical separation'], a:[0,1,2,3] },
+      { id:15, topic:'ICS', type:'mc', q:'A DMZ is…', options:['A malware quarantine','A network segment separating public-facing assets from the internal network with controlled access','A VPN tunnel','A honeypot'], a:1 },
+      { id:16, topic:'ICS', type:'mc', q:'Why isn\'t “different subnet only” enough for segmentation?', options:['Because subnets are illegal','Because rules/controls must govern allowed communications between segments','Because routers can\'t filter traffic','Because NAT breaks apps'], a:1 },
+      { id:17, topic:'ICS', type:'mc', q:'Isolation vs Segmentation in a nutshell:', options:['Isolation = divide network; Segmentation = protect one process','Isolation = contain one asset/process; Segmentation = divide network zones','They are identical terms','Both are only reactive measures'], a:1 },
+
+      // ASSESSMENT vs INVESTIGATION (AI)
+      { id:18, topic:'AI', type:'mc', q:'Assessment is best defined as…', options:['Reactive deep dive into a specific incident','Proactive evaluation of security posture/risks','Legal process after a breach','Eradication technique'], a:1 },
+      { id:19, topic:'AI', type:'mc', q:'Investigation focuses on…', options:['General risk ratings and recommendations','Root cause, scope, impact of a specific incident','Patch management cadence','Firewall procurement'], a:1 },
+      { id:20, topic:'AI', type:'multi', q:'Typical outputs of an investigation include… (pick all)', options:['Incident timeline','Attribution and root cause','Remediation actions','Annual budget plan'], a:[0,1,2] },
+    ];
+
+    // State
+    let active = [...BANK];
+    let answers = new Map(); // id -> selection (number or array)
+    let revealed = false;
+
+    const qsEl = document.getElementById('questions');
+    const countEl = document.getElementById('count');
+    const scoreEl = document.getElementById('score');
+    const scoreBar = document.getElementById('scoreBar');
+    const weakTags = document.getElementById('weakTags');
+
+    function shuffle(arr){
+      for(let i=arr.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+      }
+      return arr;
+    }
+
+    function render(){
+      qsEl.innerHTML = '';
+      active.forEach(q => {
+        const card = document.createElement('div');
+        card.className = 'question';
+        const head = document.createElement('div');
+        head.className = 'q-head';
+        head.innerHTML = `<div class="q-title">Q${q.id}. ${q.q}</div><div class="q-topic">${topicLabel(q.topic)} • ${q.type === 'multi' ? 'Multi-select' : 'Single'}</div>`;
+        const opts = document.createElement('div');
+        opts.className = 'options';
+        q.options.forEach((opt, idx) => {
+          const optEl = document.createElement('label');
+          optEl.className = 'option';
+          const input = document.createElement('input');
+          input.type = q.type === 'multi' ? 'checkbox' : 'radio';
+          input.name = 'q'+q.id;
+          input.value = idx;
+          // restore state
+          const saved = answers.get(q.id);
+          if(q.type==='multi' && Array.isArray(saved) && saved.includes(idx)) input.checked = true;
+          if(q.type==='mc' && saved === idx) input.checked = true;
+
+          input.addEventListener('change', () => {
+            if(q.type==='multi'){
+              const current = new Set(answers.get(q.id) || []);
+              if(input.checked) current.add(idx); else current.delete(idx);
+              answers.set(q.id, Array.from(current).sort((a,b)=>a-b));
+            } else {
+              answers.set(q.id, idx);
+            }
+            updateStatus();
+            if(revealed) applyReveal(q, card);
+          });
+
+          optEl.appendChild(input);
+          optEl.appendChild(document.createTextNode(opt));
+          opts.appendChild(optEl);
+        });
+        card.appendChild(head);
+        card.appendChild(opts);
+        qsEl.appendChild(card);
+      });
+      updateStatus();
+    }
+
+    function topicLabel(t){
+      return t==='IR' ? 'Incident Response' : t==='ICS' ? 'Isolation/Containment/Segmentation' : 'Assessment vs Investigation';
+    }
+
+    function evaluateQuestion(q){
+      const sel = answers.get(q.id);
+      if(q.type==='mc') return sel === q.a;
+      if(q.type==='multi'){
+        if(!Array.isArray(sel)) return false;
+        const a = q.a.slice().sort((x,y)=>x-y);
+        const b = sel.slice().sort((x,y)=>x-y);
+        return a.length===b.length && a.every((v,i)=>v===b[i]);
+      }
+      return false;
+    }
+
+    function updateStatus(){
+      const answered = active.filter(q => {
+        const v = answers.get(q.id);
+        return (q.type==='mc' && typeof v === 'number') || (q.type==='multi' && Array.isArray(v) && v.length>0);
+      }).length;
+      countEl.textContent = `${answered}/${active.length} answered`;
+
+      const correct = active.filter(evaluateQuestion).length;
+      const scorePct = Math.round((correct/active.length)*100);
+      scoreEl.textContent = `Score: ${isFinite(scorePct)?scorePct:0}%`;
+      scoreBar.style.width = `${isFinite(scorePct)?scorePct:0}%`;
+
+      // Weak areas (by topic)
+      const byTopic = { IR:{total:0, correct:0}, ICS:{total:0, correct:0}, AI:{total:0, correct:0} };
+      active.forEach(q => { byTopic[q.topic].total++; if(evaluateQuestion(q)) byTopic[q.topic].correct++; });
+      weakTags.innerHTML = '';
+      Object.entries(byTopic).forEach(([key, val]) => {
+        const pct = val.total ? Math.round((val.correct/val.total)*100) : 0;
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = `${topicLabel(key)}: ${pct}%`;
+        weakTags.appendChild(tag);
+      });
+    }
+
+    function applyReveal(q, card){
+      const optEls = Array.from(card.querySelectorAll('.option'));
+      optEls.forEach((el, idx) => {
+        el.classList.remove('correct','incorrect');
+        if(q.type==='mc'){
+          if(idx === q.a) el.classList.add('correct');
+          const sel = answers.get(q.id);
+          if(typeof sel === 'number' && sel === idx && sel !== q.a) el.classList.add('incorrect');
+        } else {
+          const isAnswer = q.a.includes(idx);
+          const sel = (answers.get(q.id) || []);
+          if(isAnswer) el.classList.add('correct');
+          if(sel.includes(idx) && !isAnswer) el.classList.add('incorrect');
+        }
+      });
+    }
+
+    function revealAll(){
+      revealed = true;
+      Array.from(qsEl.children).forEach((card, i) => applyReveal(active[i], card));
+    }
+
+    function checkAnswers(){
+      revealAll();
+      updateStatus();
+      // Scroll to top of results area for visibility
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetAll(){
+      answers.clear();
+      revealed = false;
+      render();
+    }
+
+    function startShuffle(){
+      revealed = false;
+      answers.clear();
+      active = shuffle([...active]);
+      render();
+    }
+
+    function filterTopic(value){
+      if(value==='all') active = [...BANK];
+      else active = BANK.filter(q => q.topic === value);
+      answers.clear();
+      revealed = false;
+      active = shuffle(active);
+      render();
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startShuffle);
+    document.getElementById('checkBtn').addEventListener('click', checkAnswers);
+    document.getElementById('showAnswersBtn').addEventListener('click', () => { revealAll(); });
+    document.getElementById('resetBtn').addEventListener('click', resetAll);
+    document.getElementById('filter').addEventListener('change', (e) => filterTopic(e.target.value));
+
+    // Initial render
+    active = shuffle([...BANK]);
+    render();
+  </script>
+</body>
+</html>
