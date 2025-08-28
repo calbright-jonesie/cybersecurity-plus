@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Security Monitoring — Interactive Quiz</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--success:#10b981;--danger:#ef4444}
+    body{font-family:Inter,ui-sans-serif,system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; background:linear-gradient(180deg,#071029 0%, #071a2a 100%); color:#e6eef6; padding:28px;}
+    .container{max-width:900px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 0 0}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); padding:18px; border-radius:12px}
+    .question{margin-bottom:12px}
+    .qtext{font-weight:600}
+    .options{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
+    .opt{background:#071826;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+    .opt:hover{transform:translateY(-2px)}
+    .opt.selected{outline:3px solid rgba(6,182,212,0.12)}
+    .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
+    button{background:var(--accent);color:#042027;border:none;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:20px;overflow:hidden;margin-top:12px}
+    .bar{height:100%;background:linear-gradient(90deg,var(--accent),#7c3aed);width:0%}
+    .feedback{margin-top:10px;padding:10px;border-radius:8px}
+    .correct{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.18);color:var(--success)}
+    .incorrect{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.12);color:var(--danger)}
+    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px;color:var(--muted)}
+    .summary{display:none;margin-top:14px}
+    .review{margin-top:12px}
+    .meta{font-size:13px;color:var(--muted)}
+    @media (max-width:640px){.container{padding:8px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Security Monitoring — Interactive Quiz</h1>
+        <p class="lead">Quick 12-question review: SIEM • Logs • Metadata • Flow protocols</p>
+      </div>
+      <div class="meta">Tips: choose an answer → Submit → Get immediate feedback</div>
+    </header>
+
+    <section class="card" id="quiz-card">
+      <div id="question-area"></div>
+
+      <div class="progress" aria-hidden="true"><div class="bar" id="progress-bar"></div></div>
+
+      <div class="controls">
+        <button id="submit-btn">Submit Answer</button>
+        <button class="secondary" id="next-btn" disabled>Next</button>
+        <button class="secondary" id="review-btn">Review Answers</button>
+        <div style="margin-left:auto;color:var(--muted)">Score: <strong id="score">0</strong>/<span id="total">0</span></div>
+      </div>
+
+      <div id="feedback"></div>
+
+      <div class="summary card" id="summary">
+        <h3>Results</h3>
+        <p id="result-text"></p>
+        <div id="review-list" class="review"></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="retry-btn">Retry Quiz</button>
+          <button class="secondary" id="export-btn">Download Results (JSON)</button>
+        </div>
+      </div>
+
+      <p class="meta" style="margin-top:12px">Created from: SIEM, Log Management, Monitoring Data & Metadata master cheat sheet.</p>
+    </section>
+
+  </div>
+
+<script>
+// Quiz data derived from the master cheat sheet
+const quiz = [
+  {q: "What is the primary function of a SIEM?", a:["Store backups","Collect and correlate security logs","Block malicious traffic","Replace firewalls"], correct:1, explain:"SIEM centralizes log collection and correlates events for security monitoring."},
+  {q: "Which component sends customized alerts to a SIEM when thresholds are exceeded?", a:["Dashboards","Sensors","Rsyslog","Dump files"], correct:1, explain:"Sensors placed at endpoints/services notify the SIEM when set parameters are met."},
+  {q: "What log type records OS updates, errors, and failures?", a:["Web server logs","Application logs","System logs","DNS logs"], correct:2, explain:"System logs are produced by the operating system and contain OS-level events."},
+  {q: "Which log would best show web access attempts and user downloads?", a:["Authentication logs","Web server logs","VoIP logs","Dump files"], correct:1, explain:"Web server logs track access, downloads, and attempted attacks against web servers."},
+  {q: "What does NetFlow primarily analyze?", a:["Full packet payloads","Session flows (L2–L4)","User credentials","File metadata"], correct:1, explain:"NetFlow is session-based and inspects flows typically across Layers 2–4."},
+  {q: "Which protocol samples packets across layers 2 through 7?", a:["NetFlow","sFlow","IPFIX","Syslog"], correct:1, explain:"sFlow examines packet samples across L2–L7; it is stateless sampling."},
+  {q: "IPFIX improves on flow data by:", a:["Only supporting fixed-length fields","Integrating Syslog/SNMP fields in export packets","Removing exporters and collectors","Encrypting all packets by default"], correct:1, explain:"IPFIX standardizes flow data and can include Syslog/SNMP fields; it supports variable-length fields."},
+  {q: "Which open-source tool is a high-speed log processor on Linux?", a:["Syslog-ng","Rsyslog","Nxlog","Journalctl"], correct:1, explain:"Rsyslog is known for rocket-fast processing and multi-threading on Linux."},
+  {q: "What file metadata field indicates when a file was last saved?", a:["File Creation","Last Written","Last Accessed","Checksum"], correct:1, explain:"Last written refers to the last time the file was saved or modified."},
+  {q: "Email headers can be spoofed. Which header helps reveal the true origin when present?", a:["User-Agent","X-headers","Subject","Content-Type"], correct:1, explain:"Security devices may add X-headers that show the originating account/IP beyond spoofed headers."},
+  {q: "Why establish a bandwidth baseline with monitors?", a:["To reduce disk usage","To compare normal vs. suspect usage","To disable alerts","To encrypt traffic"], correct:1, explain:"Baselines let admins compare current usage against normal patterns to spot anomalies."},
+  {q: "Which log type is most useful to track login failures and token requests?", a:["System logs","Authentication logs","Web server logs","DNS logs"], correct:1, explain:"Authentication logs store login attempts, token requests, and failures."}
+];
+
+let state = { idx:0, score:0, answers:[] };
+const total = quiz.length; document.getElementById('total').textContent = total;
+
+function renderQuestion(){
+  const q = quiz[state.idx];
+  const qa = document.createElement('div'); qa.className='question';
+  qa.innerHTML = `<div class="qtext">Q${state.idx+1}. ${escapeHtml(q.q)}</div>`;
+  const opts = document.createElement('div'); opts.className='options';
+  q.a.forEach((opt,i)=>{
+    const b = document.createElement('button'); b.type='button'; b.className='opt'; b.dataset.index=i; b.innerText = opt;
+    b.addEventListener('click', ()=>{ document.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); });
+    opts.appendChild(b);
+  });
+  qa.appendChild(opts);
+  const area = document.getElementById('question-area'); area.innerHTML=''; area.appendChild(qa);
+  document.getElementById('feedback').innerHTML='';
+  document.getElementById('submit-btn').disabled=false; document.getElementById('next-btn').disabled=true;
+  updateProgress();
+}
+
+function submitAnswer(){
+  const picked = document.querySelector('.opt.selected');
+  if(!picked){ alert('Please select an option before submitting.'); return; }
+  const chosen = Number(picked.dataset.index);
+  const q = quiz[state.idx];
+  const correct = q.correct === chosen;
+  state.answers.push({q: q.q, chosen: q.a[chosen], correct: q.a[q.correct], isCorrect: correct, explanation:q.explain});
+  if(correct){ state.score++; showFeedback(true,q.explain); }
+  else { showFeedback(false,q.explain, q.a[q.correct]); }
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('submit-btn').disabled=true; document.getElementById('next-btn').disabled=false;
+}
+
+function showFeedback(isCorrect, explanation, correctText){
+  const fb = document.getElementById('feedback'); fb.innerHTML='';
+  const div = document.createElement('div'); div.className='feedback ' + (isCorrect? 'correct':'incorrect');
+  div.innerHTML = `<strong>${isCorrect? 'Correct':'Incorrect'}</strong><div style="margin-top:6px">${escapeHtml(explanation)}${!isCorrect? '<div style="margin-top:8px"><em>Correct answer:</em> '+escapeHtml(correctText)+'</div>':''}</div>`;
+  fb.appendChild(div);
+}
+
+function nextQuestion(){
+  state.idx++;
+  if(state.idx >= total){ showSummary(); }
+  else { renderQuestion(); }
+}
+
+function updateProgress(){
+  const pct = Math.round((state.idx/total)*100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function showSummary(){
+  document.getElementById('question-area').innerHTML='';
+  document.getElementById('feedback').innerHTML='';
+  document.getElementById('quiz-card').querySelector('.controls').style.display='none';
+  const s = document.getElementById('summary'); s.style.display='block';
+  document.getElementById('result-text').innerHTML = `You scored <strong>${state.score}</strong> out of <strong>${total}</strong> (${Math.round((state.score/total)*100)}%).`;
+  const list = document.getElementById('review-list'); list.innerHTML='';
+  state.answers.forEach((a,i)=>{
+    const item = document.createElement('div'); item.className='card'; item.style.marginTop='8px';
+    item.innerHTML = `<div style="font-weight:700">Q${i+1}. ${escapeHtml(a.q)}</div>
+      <div style="margin-top:6px">Your answer: <strong>${escapeHtml(a.chosen)}</strong> ${a.isCorrect?'<span style="color:var(--success);margin-left:8px">✔</span>':'<span style="color:var(--danger);margin-left:8px">✖</span>'}</div>
+      <div style="margin-top:6px">Correct: <strong>${escapeHtml(a.correct)}</strong></div>
+      <div style="margin-top:8px;color:var(--muted)">${escapeHtml(a.explanation)}</div>`;
+    list.appendChild(item);
+  });
+}
+
+function retry(){ state = { idx:0, score:0, answers:[] }; document.getElementById('quiz-card').querySelector('.controls').style.display='flex'; document.getElementById('summary').style.display='none'; document.getElementById('score').textContent='0'; renderQuestion(); }
+
+function downloadResults(){
+  const data = {score:state.score,total:total,answers:state.answers, timestamp:new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='security-monitoring-quiz-results.json'; a.click(); URL.revokeObjectURL(url);
+}
+
+function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+// init
+renderQuestion(); document.getElementById('submit-btn').addEventListener('click', submitAnswer);
+document.getElementById('next-btn').addEventListener('click', nextQuestion);
+document.getElementById('retry-btn').addEventListener('click', retry);
+document.getElementById('review-btn').addEventListener('click', ()=>{ if(state.idx === total) showSummary(); else alert('You can review after finishing the quiz.'); });
+document.getElementById('export-btn').addEventListener('click', downloadResults);
+
+</script>
+</body>
+</html>
